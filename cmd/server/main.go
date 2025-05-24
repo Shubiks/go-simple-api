@@ -8,9 +8,14 @@ import (
 	"github.com/Shubiks/go-simple-api/internal/db"
 	"github.com/Shubiks/go-simple-api/internal/handler"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// 👇 load .env file first
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, reading from system env")
+	}
 	cfg := config.Load()
 
 	database, err := db.Connect(cfg)
@@ -20,6 +25,7 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Get("/users", handler.GetUsersHandler(database))
+	r.Post("/users", handler.CreateUserHandler)
 
 	log.Printf("Server starting on port %s...", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)

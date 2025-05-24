@@ -3,9 +3,9 @@ package db
 import (
 	"fmt"
 
+	"github.com/Shubiks/go-simple-api/internal/config"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/yourusername/go-simple-api/internal/config"
 )
 
 func Connect(cfg *config.Config) (*sqlx.DB, error) {
