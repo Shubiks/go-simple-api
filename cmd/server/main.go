@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Shubiks/go-simple-api/internal/auth"
 	"github.com/Shubiks/go-simple-api/internal/config"
 	"github.com/Shubiks/go-simple-api/internal/db"
 	"github.com/Shubiks/go-simple-api/internal/handler"
@@ -18,14 +19,20 @@ func main() {
 	}
 	cfg := config.Load()
 
-	database, err := db.Connect(cfg)
+	db, err := db.Connect(cfg)
 	if err != nil {
-		log.Fatalf("Database connection failed: %v", err)
+		log.Fatalf("db connection failed: %v", err)
 	}
 
+	handler.SetDB(db)
+
 	r := chi.NewRouter()
-	r.Get("/users", handler.GetUsersHandler(database))
+	r.Use(auth.JWTMiddleware)
+
 	r.Post("/users", handler.CreateUserHandler)
+	r.Post("/login", handler.LoginHandler)
+
+	r.Get("/users", handler.GetUsersHandler(db))
 
 	log.Printf("Server starting on port %s...", cfg.Port)
 	http.ListenAndServe(":"+cfg.Port, r)
