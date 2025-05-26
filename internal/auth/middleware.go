@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -9,6 +10,8 @@ import (
 type contextKey string
 
 const UserContextKey = contextKey("userEmail")
+const ContextUserIDKey = contextKey("user_id")
+const ContextUserNameKey = contextKey("user_name")
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +38,17 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), UserContextKey, claims.Email)
+		userID := int(claims.UserID) // assuming ValidateToken returns a struct
+		fmt.Printf("JWT Middleware: userID extracted from token: %d", userID)
+		name := claims.Name
+
+		if userID == 0 {
+			http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), ContextUserIDKey, userID)
+		ctx = context.WithValue(ctx, ContextUserNameKey, name)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

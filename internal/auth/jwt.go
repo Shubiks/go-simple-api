@@ -9,22 +9,28 @@ import (
 var jwtKey = []byte("supersecretkey") // put this in env in production
 
 type Claims struct {
-	Email string `json:"email"`
+	UserID int    `json:"user_id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
-func GenerateTokens(email string) (accessToken string, refreshToken string, err error) {
+func GenerateTokens(userID int, name string, email string) (accessToken string, refreshToken string, err error) {
 	accessClaims := &Claims{
-		Email: email,
+		UserID: userID, // << add this
+		Name:   name,   // << add if you want
+		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(3 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
 		},
 	}
 
 	refreshClaims := &Claims{
-		Email: email,
+		UserID: userID,
+		Name:   name,
+		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(72 * time.Hour)), // 3 days
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(72 * time.Hour)),
 		},
 	}
 
@@ -42,9 +48,30 @@ func ValidateToken(tokenStr string) (*Claims, error) {
 		return jwtKey, nil
 	})
 
+	if err != nil {
+		return nil, err // early return on parse failure
+	}
+
+	// Ensure token is valid and of correct claims type
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
 
 	return nil, err
+}
+
+func VerifyToken(tokenStr string) (*jwt.Token, jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, nil, jwt.ErrInvalidKey
+	}
+
+	return token, claims, nil
 }
