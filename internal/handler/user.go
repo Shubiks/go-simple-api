@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/Shubiks/go-simple-api/internal/utils"
@@ -14,6 +15,7 @@ func GetUsersHandler(db *sqlx.DB) http.HandlerFunc {
 		var users []models.User
 		err := db.Select(&users, "SELECT * FROM users")
 		if err != nil {
+			log.Printf("Error selecting users: %v", err)
 			http.Error(w, "Could not fetch users", http.StatusInternalServerError)
 			return
 		}
